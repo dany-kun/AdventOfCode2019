@@ -15,7 +15,15 @@ class Day3 : Day {
     }
 
     override fun execute2() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val input = loadFile("day3.txt")
+        val line1 = loadPath(input[0])
+        val line2 = loadPath(input[1])
+        val intersections = line1.intersect(line2).filter { it.first != 0 || it.second != 0 }.toSet()
+        val line1Steps = intersections.map { line1.indexOf(it) }
+        val line2Steps = intersections.map { line2.indexOf(it) }
+        // +2 to offset the indices from 0
+        val steps = line1Steps.zip(line2Steps) { a, b -> a + b + 2 }
+        println(steps.min())
     }
 
     private fun loadPath(line: String): List<Pair<Int, Int>> {
