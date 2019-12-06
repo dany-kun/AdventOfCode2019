@@ -3,19 +3,27 @@ package advent
 class Day6 : Day {
 
     override fun execute1() {
-        buildGraph("COM")
+        val (graph, unlinkNodes) = buildGraph("COM")
+        require(unlinkNodes.isEmpty())
+        println(countGraph(graph["COM"], graph))
     }
 
-    private fun buildGraph(start: String) {
-        val result = loadFile("day6.txt")
-                .fold(mutableMapOf(start to 0) to mutableListOf<Pair<String, String>>()) { (cachedCount, unknownNodes), line ->
+    private fun countGraph(node: MutableList<String>?, graph: MutableMap<String, MutableList<String>>): Int {
+        if (node == null) return 0
+        return node.size + node.fold(0) { acc, el ->
+            acc + countGraph(graph[el], graph)
+        }
+    }
+
+    private fun buildGraph(start: String): Pair<MutableMap<String, MutableList<String>>, MutableList<Pair<String, String>>> {
+        return loadFile("day6.txt")
+                .fold(mutableMapOf(start to mutableListOf<String>()) to mutableListOf()) { (cachedCount, unknownNodes), line ->
                     val (left, right) = line.split(")").run { first() to last() }
                     // Already traversed node
                     if (cachedCount[left] != null) {
-                        val i = cachedCount[left]!! + 1
-                        cachedCount[right] = i
+                        cachedCount[left]!!.add(right)
 
-                        val linkedNodes = linkUnknownNodeToGraph(right, i, unknownNodes)
+                        val linkedNodes = linkUnknownNodeToGraph(right, unknownNodes)
 
                         cachedCount.putAll(linkedNodes)
                         // New node
@@ -24,20 +32,20 @@ class Day6 : Day {
                     }
                     cachedCount to unknownNodes
                 }
-        require(result.second.isEmpty())
-        println(result.first.values.sum())
     }
 
-    private fun linkUnknownNodeToGraph(newLinkedNode: String, i: Int, unknownNodes: MutableList<Pair<String, String>>): List<Pair<String, Int>> {
-        val newLinks = unknownNodes.filter { it.first == newLinkedNode }.map { it.second to i + 1 }
+    private fun linkUnknownNodeToGraph(newLinkedNode: String, unknownNodes: MutableList<Pair<String, String>>): Map<String, MutableList<String>> {
+        val newLinks = unknownNodes.filter { it.first == newLinkedNode }.map { it.second }.toMutableList()
+        if (newLinks.isEmpty()) return mapOf(newLinkedNode to mutableListOf())
         // Remove processed/re-attached node
-        if (newLinks.isEmpty()) return newLinks
         unknownNodes.removeAll { it.first == newLinkedNode }
-        val missing = newLinks.flatMap { linkUnknownNodeToGraph(it.first, i + 1, unknownNodes) }
-        return newLinks + missing
+        val missing = newLinks.flatMap { linkUnknownNodeToGraph(it, unknownNodes).entries }.associate { it.toPair() }
+        return mapOf(newLinkedNode to newLinks).plus(missing)
     }
 
     override fun execute2() {
-
+        val (graph, unlinkNodes) = buildGraph("COM")
+        println(unlinkNodes)
+        println(graph)
     }
 }
