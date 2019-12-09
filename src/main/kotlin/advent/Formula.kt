@@ -24,8 +24,8 @@ interface Instruction {
         val sequence: List<String> = originalSequence
 
         fun updateFromParamPosition(offset: Int, value: String): List<String> {
-            val param = originalSequence[originalSequence[pointerPosition + offset].toInt()]
-            originalSequence[param.toInt()] = value
+            val param = getAt(pointerPosition + offset).toInt()
+            originalSequence[param] = value
             return originalSequence
         }
     }
