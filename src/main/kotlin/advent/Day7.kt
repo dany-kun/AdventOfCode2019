@@ -15,7 +15,6 @@ class Day7 : Day {
 
         val input = loadFile("day7.txt").first()
                 .split(",")
-                .map { it.toInt() }
         val machineCount = 5
         val machines = (0 until machineCount).map { IntCodeMachine(input) }
         val maxMachine = if (loop) Int.MAX_VALUE else machines.count()
@@ -25,7 +24,7 @@ class Day7 : Day {
             val result = machine.runInstructions(inputs)
             println("Got output $result at $index")
             when (result) {
-                is IntCodeMachine.Result.Output -> result.value
+                is IntCodeMachine.Result.Output -> result.value.toInt()
                 is IntCodeMachine.Result.Terminal -> return acc
             }
         }

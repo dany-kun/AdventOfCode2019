@@ -8,8 +8,8 @@ class Day5 : Day {
 
     private fun traverse(input: Int) {
         val results = IntCodeMachine(loadFile("day5.txt").first()
-                .split(",")
-                .map { it.toInt() }).runInstructions(
+                .split(","))
+                .runInstructions(
                 listOf(input))
         println(results)
     }

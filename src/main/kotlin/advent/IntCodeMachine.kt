@@ -1,10 +1,10 @@
 package advent
 
-class IntCodeMachine(private var instructions: List<Int>) {
+class IntCodeMachine(private var instructions: List<String>) {
 
     sealed class Result {
 
-        data class Output(val value: Int) : Result()
+        data class Output(val value: Double) : Result()
         object Terminal : Result()
     }
 
@@ -29,8 +29,8 @@ class IntCodeMachine(private var instructions: List<Int>) {
         throw IllegalStateException("Program did not completed")
     }
 
-    private fun convert(instructionCode: Int): Instruction {
-        return when (val i = "$instructionCode".takeLast(2).toInt()) {
+    private fun convert(instructionCode: String): Instruction {
+        return when (val i = instructionCode.takeLast(2).toInt()) {
             1 -> SumInstruction()
             2 -> ProductInstruction()
             3 -> SimpleInputInstruction()
