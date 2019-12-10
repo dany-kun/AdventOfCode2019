@@ -5,14 +5,12 @@ class Day6 : Day {
     override fun execute1() {
         val (graph, unlinkNodes) = buildGraph("COM")
         require(unlinkNodes.isEmpty())
-        println(countGraph(graph["COM"], graph))
+        println(countGraph(0, "COM", graph))
     }
 
-    private fun countGraph(node: MutableList<String>?, graph: MutableMap<String, MutableList<String>>): Int {
-        if (node == null) return 0
-        return node.size + node.fold(0) { acc, el ->
-            acc + countGraph(graph[el], graph)
-        }
+    private fun countGraph(distance: Int, node: String, graph: MutableMap<String, MutableList<String>>): Int {
+        val links = graph[node] ?: return distance + 1
+        return distance + links.map { el -> countGraph(distance + 1, el, graph) }.sum()
     }
 
     private fun buildGraph(start: String): Pair<MutableMap<String, MutableList<String>>, MutableList<Pair<String, String>>> {
@@ -45,7 +43,30 @@ class Day6 : Day {
 
     override fun execute2() {
         val (graph, unlinkNodes) = buildGraph("COM")
-        println(unlinkNodes)
-        println(graph)
+        require(unlinkNodes.isEmpty())
+        findLinks(graph)
+    }
+
+    private fun findLinks(graph: Map<String, List<String>>) {
+        var count = 0
+        var leafs = listOf("YOU")
+        while (true) {
+            if (leafs.isEmpty()) break
+            val linkedNodes = leafs
+                    .flatMap { leaf ->
+                        // Add all connections to a leaf
+                        graph.entries.filter { it.value.contains(leaf) }.map { it.key }.plus(graph[leaf]!!)
+                    }
+                    .toSet()
+            // If last connection was found
+            if (graph.any { linkedNodes.contains(it.key) && it.value.contains("SAN") }) {
+                break
+            } else {
+                count += 1
+                leafs = linkedNodes.filter { graph[it]!!.isNotEmpty() }
+            }
+        }
+        println(count)
+
     }
 }
