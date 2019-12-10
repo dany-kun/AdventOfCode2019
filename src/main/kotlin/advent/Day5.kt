@@ -7,10 +7,12 @@ class Day5 : Day {
     }
 
     private fun traverse(input: Int) {
-        val results = IntCodeMachine(loadFile("day5.txt").first()
-                .split(","))
-                .runInstructions(
-                listOf(input))
+        val sequence = loadFile("day5.txt").first()
+                .split(",")
+        val intCodeMachine = IntCodeMachine()
+        val results = intCodeMachine
+                .runInstructions(Instruction.Output.Input(0, sequence,
+                        listOf(input), 0, emptyMap()))
         println(results)
     }
 

@@ -2,19 +2,30 @@ package advent
 
 class Day9 : Day {
     override fun execute1() {
-        val seq = loadFile("day9.txt").first().split(",")
-        val intCodeMachine = IntCodeMachine(seq)
-        while (true) {
-            val result = intCodeMachine.runInstructions(listOf(1))
-            when (result) {
-                is IntCodeMachine.Result.Output -> Unit
-                IntCodeMachine.Result.Terminal -> TODO()
-            }.let { }
-        }
+        run(1)
+    }
 
+    private fun run(input: Int) {
+        val seq = loadFile("day9.txt").first().split(",")
+        val intCodeMachine = IntCodeMachine()
+        var input = Instruction.Output.Input(
+                0,
+                seq,
+                listOf(input),
+                0,
+                emptyMap()
+        )
+        while (true) {
+            when (val out = intCodeMachine.runInstructions(input)) {
+                is IntCodeMachine.Result.Output -> {
+                    input = out.input
+                }
+                IntCodeMachine.Result.Terminal -> TODO()
+            }
+        }
     }
 
     override fun execute2() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        run(2)
     }
 }

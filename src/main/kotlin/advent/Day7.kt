@@ -15,19 +15,44 @@ class Day7 : Day {
 
         val input = loadFile("day7.txt").first()
                 .split(",")
+        val machine = IntCodeMachine()
         val machineCount = 5
-        val machines = (0 until machineCount).map { IntCodeMachine(input) }
-        val maxMachine = if (loop) Int.MAX_VALUE else machines.count()
-        return (0 until maxMachine).fold(0) { acc, index ->
-            val inputs = if (index >= 5) listOf(acc) else listOf(phases[index % machines.count()], acc)
-            val machine = machines[index % machines.count()]
-            val result = machine.runInstructions(inputs)
-            println("Got output $result at $index")
-            when (result) {
-                is IntCodeMachine.Result.Output -> result.value.toInt()
-                is IntCodeMachine.Result.Terminal -> return acc
+
+        val machines = (0 until machineCount).map { Instruction.Output.Input(0, input, listOf(phases[it], 0), 0, emptyMap()) }.toMutableList()
+        var count = 0
+        var lastOutput = 0
+        while (true) {
+            when (val out = machine.runInstructions(machines[count % machineCount])) {
+                is IntCodeMachine.Result.Output -> {
+                    lastOutput = out.value.toInt()
+                    if (count == machineCount - 1 && !loop) return lastOutput
+                    // Store the current machine state
+                    machines[count % machineCount] = out.input
+                    // Update the next machine
+                    count += 1
+                    val prev = machines[count % machineCount]
+                    val values = if (count >= machineCount) listOf(lastOutput) else listOf(phases[count], lastOutput)
+                    machines[count % machineCount] = Instruction.Output.Input(prev.pointerPosition, prev.sequence,
+                            values,
+                            prev.base, prev.extraMemory)
+                }
+                IntCodeMachine.Result.Terminal -> return lastOutput
             }
         }
+
+
+//        val machines = (0 until machineCount).map { Instruction.Output.Input(0, input) }
+//        val maxMachine = if (loop) Int.MAX_VALUE else machines.count()
+//        return (0 until maxMachine).fold(0) { acc, index ->
+//            val inputs = if (index >= 5) listOf(acc) else listOf(phases[index % machines.count()], acc)
+//            val machine = machines[index % machines.count()]
+//            val result = machine.runInstructions(Instruction.Output.Input(machine.pointerPosition, ArrayList(machine.instructions), inputs, machine.base, emptyMap()))
+//            println("Got output $result at $index")
+//            when (result) {
+//                is IntCodeMachine.Result.Output -> result.value.toInt()
+//                is IntCodeMachine.Result.Terminal -> return acc
+//            }
+//        }
     }
 
     override fun execute2() {
