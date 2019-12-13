@@ -18,7 +18,7 @@ class Day7 : Day {
         val machine = IntCodeMachine()
         val machineCount = 5
 
-        val machines = (0 until machineCount).map { Instruction.Output.Input(0, input, listOf(phases[it], 0), 0, emptyMap()) }.toMutableList()
+        val machines = (0 until machineCount).map { Instruction.Output.Input(0, input, sequenceOf(phases[it], 0), 0, emptyMap()) }.toMutableList()
         var count = 0
         var lastOutput = 0
         while (true) {
@@ -31,7 +31,7 @@ class Day7 : Day {
                     // Update the next machine
                     count += 1
                     val prev = machines[count % machineCount]
-                    val values = if (count >= machineCount) listOf(lastOutput) else listOf(phases[count], lastOutput)
+                    val values = if (count >= machineCount) sequenceOf(lastOutput) else sequenceOf(phases[count], lastOutput)
                     machines[count % machineCount] = Instruction.Output.Input(prev.pointerPosition, prev.sequence,
                             values,
                             prev.base, prev.extraMemory)

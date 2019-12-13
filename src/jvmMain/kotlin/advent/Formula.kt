@@ -11,7 +11,7 @@ interface Instruction {
         data class Input(
                 val pointerPosition: Int,
                 val sequence: List<String>,
-                val values: List<Int>,
+                val values: Sequence<Int>,
                 val base: Int,
                 val extraMemory: Map<Int, String>) : Output() {
 

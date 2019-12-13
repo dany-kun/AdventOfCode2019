@@ -11,7 +11,7 @@ class Day9 : Day {
         var input = Instruction.Output.Input(
                 0,
                 seq,
-                listOf(input),
+                sequenceOf(input),
                 0,
                 emptyMap()
         )

@@ -10,7 +10,7 @@ class Day11 : Day {
     private fun drawMap(start: Int): Map<Pair<Int, Int>, Int> {
         val machine = IntCodeMachine()
         var input = Instruction.Output.Input(0, loadFile("day11.txt").first().split(","),
-                listOf(start), 0, emptyMap())
+                sequenceOf(start), 0, emptyMap())
         val instruction = mutableListOf<Int>()
         val map = mutableMapOf<Pair<Int, Int>, Int>()
         var position = 0 to 0
@@ -34,7 +34,7 @@ class Day11 : Day {
                         input = Instruction.Output.Input(
                                 out.input.pointerPosition,
                                 out.input.sequence,
-                                listOf(map[position] ?: start),
+                                sequenceOf(map[position] ?: start),
                                 out.input.base, out.input.extraMemory
                         )
                     } else {

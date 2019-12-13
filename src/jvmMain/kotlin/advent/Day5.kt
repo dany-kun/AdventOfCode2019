@@ -12,7 +12,7 @@ class Day5 : Day {
         val intCodeMachine = IntCodeMachine()
         val results = intCodeMachine
                 .runInstructions(Instruction.Output.Input(0, sequence,
-                        listOf(input), 0, emptyMap()))
+                        sequenceOf(input), 0, emptyMap()))
         println(results)
     }
 
