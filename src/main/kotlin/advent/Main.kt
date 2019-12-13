@@ -1,5 +1,5 @@
 package advent
 
 fun main() {
-    Day11().execute2()
+    Day12().execute2()
 }
