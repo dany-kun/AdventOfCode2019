@@ -1,5 +1,7 @@
 package advent
 
+import java.io.File
+
 interface Day {
 
     fun execute1()
@@ -7,6 +9,6 @@ interface Day {
     fun execute2()
 
     fun loadFile(name: String): List<String> {
-        return Day::class.java.classLoader.getResource(name).readText().split("\n")
+        return File("src/jvmMain/resources/$name").readText().split("\n")
     }
 }
