@@ -1,15 +1,22 @@
 package advent
 
+import kotlin.math.abs
+
 class Day15 : Day {
 
 
     override fun execute1() {
+        val result = loadMap()
+        drawMap(result)
+    }
+
+    private fun loadMap(): Map<Pair<Int, Int>, String> {
         val isa = loadFile("day15.txt").first().split(",")
         val machine = IntCodeMachine()
 
         var instruction = Instruction.Output.Input(0, isa, emptySequence(), 0, emptyMap())
-        val visitedPositions = mutableMapOf<Pair<Int, Int>, String>()
-        findShortestPath(visitedPositions, 0 to 0, emptyList()) {
+        val visitedPositions = mutableMapOf((0 to 0) to "D")
+        val result = findShortestPath(0, visitedPositions, 0 to 0, emptyList(), emptyList()) {
             val input = Instruction.Output.Input(instruction.pointerPosition, instruction.sequence, sequenceOf(it), instruction.base, instruction.extraMemory)
             when (val out = machine.runInstructions(input)) {
                 is IntCodeMachine.Result.Output -> {
@@ -19,34 +26,99 @@ class Day15 : Day {
                 IntCodeMachine.Result.Terminal -> TODO()
             }
         }
+        return result
+    }
+
+    private fun drawMap(result: Map<Pair<Int, Int>, String>) {
+        val (minY, maxY) = result.keys.map { it.second }.let { it.min()!! to it.max()!! }
+        val (minX, maxX) = result.keys.map { it.first }.let { it.min()!! to it.max()!! }
+
+        val map = (minY..maxY).joinToString("\n") { y ->
+            (minX..maxX).joinToString("") { x ->
+                result[x to y] ?: " "
+            }
+        }
+        println(map)
+
+    }
+
+    private fun moveInDirection(count: Int,
+                                visitedPositions: MutableMap<Pair<Int, Int>, String>,
+                                currentPosition: Pair<Int, Int>,
+                                positionToTry: Pair<Int, Int>,
+                                movedPath: List<Pair<Int, Int>>,
+                                nodesToRevisit: List<Pair<Int, Int>>,
+                                command: Int,
+                                evaluatePosition: (Int) -> Double): Map<Pair<Int, Int>, String>? {
+        val nextPosition = nextPosition(visitedPositions, { evaluatePosition(command) }, positionToTry)
+        return if (nextPosition != null) {
+            if (visitedPositions[nextPosition] == "0") println(count + 1)
+            findShortestPath(
+                    count + 1,
+                    visitedPositions,
+                    nextPosition,
+                    movedPath.plus(nextPosition),
+                    nodesToRevisit.plus(currentPosition),
+                    evaluatePosition)
+        } else {
+            null
+        }
     }
 
     private fun findShortestPath(
+            count: Int,
             visitedPositions: MutableMap<Pair<Int, Int>, String>,
             currentPosition: Pair<Int, Int>,
             movedPath: List<Pair<Int, Int>>,
-            evaluatePosition: (Int) -> Double): MutableMap<Pair<Int, Int>, String> {
-        if (visitedPositions.any { it.value == "0" }) {
-            println("Got it")
+            nodesToRevisit: List<Pair<Int, Int>>,
+            evaluatePosition: (Int) -> Double): Map<Pair<Int, Int>, String> {
+        return moveInDirection(count, visitedPositions,
+                currentPosition,
+                currentPosition.first to currentPosition.second + 1,
+                movedPath,
+                nodesToRevisit, 1, evaluatePosition)
+                ?: moveInDirection(count, visitedPositions,
+                        currentPosition,
+                        currentPosition.first to currentPosition.second - 1,
+                        movedPath,
+                        nodesToRevisit, 2, evaluatePosition)
+                ?: moveInDirection(count, visitedPositions,
+                        currentPosition,
+                        currentPosition.first - 1 to currentPosition.second,
+                        movedPath,
+                        nodesToRevisit, 3, evaluatePosition)
+                ?: moveInDirection(count, visitedPositions,
+                        currentPosition,
+                        currentPosition.first + 1 to currentPosition.second,
+                        movedPath,
+                        nodesToRevisit, 4, evaluatePosition)
+                ?: tryPreviousPosition(count, visitedPositions, currentPosition, nodesToRevisit, movedPath, evaluatePosition)
+    }
+
+    private fun tryPreviousPosition(count: Int,
+                                    visitedPositions: MutableMap<Pair<Int, Int>, String>, currentPosition: Pair<Int, Int>, nodesToRevisit: List<Pair<Int, Int>>, movedPath: List<Pair<Int, Int>>, evaluatePosition: (Int) -> Double): Map<Pair<Int, Int>, String> {
+        if (nodesToRevisit.isEmpty()) {
             return visitedPositions
         }
-        val nextPositionNorth = nextPosition(visitedPositions, { evaluatePosition(1) }, currentPosition.first to currentPosition.second + 1)
-        if (nextPositionNorth != null) {
-            return findShortestPath(visitedPositions, nextPositionNorth, movedPath.plus(nextPositionNorth), evaluatePosition)
+        require(movedPath.last() == currentPosition)
+
+        // Turn back to last visited node
+        val previousNode = nodesToRevisit.last()
+
+        val direction = when {
+            currentPosition.first == previousNode.first && currentPosition.second == previousNode.second - 1 -> 1
+            currentPosition.first == previousNode.first && currentPosition.second == previousNode.second + 1 -> 2
+            currentPosition.first == previousNode.first - 1 && currentPosition.second == previousNode.second -> 4
+            currentPosition.first == previousNode.first + 1 && currentPosition.second == previousNode.second -> 3
+            else -> throw IllegalStateException("Not adjacent cells: $currentPosition vs $previousNode")
         }
-        val nextPositionEast = nextPosition(visitedPositions, { evaluatePosition(3) }, currentPosition.first + 1 to currentPosition.second)
-        if (nextPositionEast != null) {
-            return findShortestPath(visitedPositions, nextPositionEast, movedPath.plus(nextPositionEast), evaluatePosition)
-        }
-        val nextPositionSouth = nextPosition(visitedPositions, { evaluatePosition(2) }, currentPosition.first to currentPosition.second - 1)
-        if (nextPositionSouth != null) {
-            return findShortestPath(visitedPositions, nextPositionSouth, movedPath.plus(nextPositionSouth), evaluatePosition)
-        }
-        val nextPositionWest = nextPosition(visitedPositions, { evaluatePosition(4) }, currentPosition.first - 1 to currentPosition.second)
-        if (nextPositionWest != null) {
-            return findShortestPath(visitedPositions, nextPositionWest, movedPath.plus(nextPositionWest), evaluatePosition)
-        }
-        return visitedPositions
+        evaluatePosition(direction)
+
+        return findShortestPath(count - 1, visitedPositions,
+                previousNode,
+                movedPath.dropLast(1),
+                nodesToRevisit.dropLast(1),
+                evaluatePosition)
     }
 
     private fun nextPosition(visitedPositions: MutableMap<Pair<Int, Int>, String>, output: () -> Double, position: Pair<Int, Int>): Pair<Int, Int>? {
@@ -58,7 +130,7 @@ class Day15 : Day {
                 null
             }
             1.0 -> {
-                visitedPositions[position] = " "
+                visitedPositions[position] = "."
                 position
             }
             2.0 -> {
@@ -70,6 +142,23 @@ class Day15 : Day {
     }
 
     override fun execute2() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val result = loadMap()
+        val start = result.entries.first { it.value == "0" }.key
+        val paths = result.filterValues { it != "X" }.keys
+        val distances = findAllDistances(start, 0, mapOf(start to 0), paths)
+        println(distances.values.max())
     }
+
+    private fun findAllDistances(start: Pair<Int, Int>, distance: Int, distances: Map<Pair<Int, Int>, Int>, paths: Set<Pair<Int, Int>>): Map<Pair<Int, Int>, Int> {
+        if (paths.isEmpty()) return distances
+        val closePoints = paths.filter { it.isAdjacentTo(start) }
+        val newDistances = distances.plus(closePoints.map { it to distance + 1 })
+        val newPaths = paths.minus(closePoints.toSet())
+        return closePoints.fold(distances) { acc, pair ->
+            acc.plus(findAllDistances(pair, distance + 1, newDistances, newPaths))
+        }
+    }
+
+    private fun Pair<Int, Int>.distanceTo(point: Pair<Int, Int>) = abs(point.first - first) + abs(point.second - second)
+    private fun Pair<Int, Int>.isAdjacentTo(point: Pair<Int, Int>) = distanceTo(point) == 1
 }
