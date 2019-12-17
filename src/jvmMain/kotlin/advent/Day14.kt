@@ -5,24 +5,22 @@ typealias WeightedElement = Pair<Int, String>
 class Day14 : Day {
 
     override fun execute1() {
-        val result = findSplit()
-        println(result.first)
+        val result = findOreCount(1)
+        println(result)
     }
 
-    private fun findSplit(): Pair<Int, Int> {
+    private fun findOreCount(fuelCount: Long): Long {
         val reactions: Map<WeightedElement, List<WeightedElement>> = loadFile("day14.txt").map {
             it.split(" =>").let { it.last().trim().asWeighted to it.first().split(", ").map { it.asWeighted } }
         }.toMap()
         val ordersOfOperations = findOrdersOfOperations(reactions, listOf(setOf("ORE")))
-        val result = computeAmount(reactions, ordersOfOperations, mapOf("FUEL" to 1), 0)
-        return result
+        return computeAmount(reactions, ordersOfOperations, mapOf("FUEL" to fuelCount))
     }
 
     private fun computeAmount(reactions: Map<Pair<Int, String>, List<Pair<Int, String>>>,
                               order: List<Set<String>>,
-                              current: Map<String, Int>,
-                              extraElements: Int): Pair<Int, Int> {
-        if (current.keys.singleOrNull() == "ORE") return current.values.first() to extraElements
+                              current: Map<String, Long>): Long {
+        if (current.keys.singleOrNull() == "ORE") return current.values.first()
         val mostComplex = current.entries.maxBy { (k, _) -> order.indexOfFirst { it.contains(k) } }!!
         val reaction = reactions.entries.first { it.key.second == mostComplex.key }
         val factor = ((mostComplex.value - 1) / reaction.key.first + 1)
@@ -30,11 +28,9 @@ class Day14 : Day {
         val remainingElements = current.minus(mostComplex.key)
         val newElements = reaction.value.map { it.first * factor to it.second }.associate { it.second to it.first }
 
-        val extras = reaction.value.map {
-            it.first * factor - mostComplex.value
-        }.sum()
+        // val operation = (mostComplex.value * factor to mostComplex.key) to newElements
 
-        return computeAmount(reactions, order, remainingElements.mergeReduce(newElements) { a, b -> a + b }, extraElements + extras)
+        return computeAmount(reactions, order, remainingElements.mergeReduce(newElements) { a, b -> a + b })
     }
 
     private fun <K, V> Map<K, V>.mergeReduce(other: Map<K, V>, reduce: (V, V) -> V = { a, b -> b }): Map<K, V> {
@@ -59,8 +55,22 @@ class Day14 : Day {
         get() = trim().split(" ").let { it.first().toInt() to it.last().trim() }
 
     override fun execute2() {
-        val result = findSplit()
-        val oreProducedPerFuel = result.first + result.second * 1.0F / result.first
-        println(1000000000000/ oreProducedPerFuel)
+        val minimumFuel = 1000000000000 / findOreCount(1).also { println(it) }
+        var fuelCount = minimumFuel * 2
+        // Use step to make computations faster
+        var step = 1000
+        while (true) {
+            val result = findOreCount(fuelCount)
+            if (result < 1000000000000) {
+                if (step == 1) {
+                    println(fuelCount)
+                    break
+                } else {
+                    fuelCount += step
+                    step /= 10
+                }
+            }
+            fuelCount += -step
+        }
     }
 }
