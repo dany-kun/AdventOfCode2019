@@ -13,7 +13,6 @@ class IntCodeMachine {
         loop@ while (true) {
             input = when (val out = input.instruction.executeInstruction(input)) {
                 is Instruction.Output.Value -> {
-                    // println("Got output ${out.value}")
                     return Result.Output(out.value, out.input)
                 }
                 Instruction.Output.Terminal -> return Result.Terminal
