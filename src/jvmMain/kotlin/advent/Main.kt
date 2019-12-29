@@ -1,5 +1,5 @@
 package advent
 
-fun main() {
-    Day16().execute2()
+suspend fun main() {
+    Day17().execute2()
 }

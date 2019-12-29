@@ -11,7 +11,7 @@ interface Instruction {
         data class Input(
                 val pointerPosition: Int,
                 val sequence: List<String>,
-                val values: Sequence<Int>,
+                val inputValues: IntCodeInput,
                 val base: Int,
                 val extraMemory: Map<Int, String>) : Output() {
 
@@ -73,7 +73,7 @@ class SumInstruction : Instruction {
         val firstParameter = input.parameter(1)
         val secondParameter = input.parameter(2)
         val (outputSequence, extra) = input.updateFromParamPosition(3, "${firstParameter + secondParameter}")
-        return Instruction.Output.Input(input.pointerPosition + 4, outputSequence, input.values, input.base, extra)
+        return Instruction.Output.Input(input.pointerPosition + 4, outputSequence, input.inputValues, input.base, extra)
     }
 }
 
@@ -83,17 +83,17 @@ class ProductInstruction : Instruction {
         val firstParameter = input.parameter(1)
         val secondParameter = input.parameter(2)
         val (outputSequence, extra) = input.updateFromParamPosition(3, "${firstParameter * secondParameter}")
-        return Instruction.Output.Input(input.pointerPosition + 4, outputSequence.toList(), input.values, input.base, extra)
+        return Instruction.Output.Input(input.pointerPosition + 4, outputSequence.toList(), input.inputValues, input.base, extra)
     }
 }
 
 class SimpleInputInstruction : Instruction {
     override fun executeInstruction(input: Instruction.Output.Input): Instruction.Output {
-        val value = input.values.first().toDouble()
+        val value = input.inputValues.next()
         val (outputSequence, extra) = input.updateFromParamPosition(1, "$value")
         return Instruction.Output.Input(input.pointerPosition + 2,
                 outputSequence,
-                input.values.drop(1),
+                input.inputValues,
                 input.base,
                 extra)
     }
@@ -105,7 +105,7 @@ class SimpleOutputInstruction : Instruction {
         val updatedInput = Instruction.Output.Input(
                 input.pointerPosition + 2,
                 input.sequence,
-                input.values,
+                input.inputValues,
                 input.base,
                 input.extraMemory)
         return Instruction.Output.Value(value, updatedInput)
@@ -116,7 +116,7 @@ class ShiftingInstructionNonZero : Instruction {
     override fun executeInstruction(input: Instruction.Output.Input): Instruction.Output {
         val param = input.parameter(1)
         val shift = if (param != 0.0) input.parameter(2).toInt() else input.pointerPosition + 3
-        return Instruction.Output.Input(shift, input.sequence, input.values, input.base, input.extraMemory)
+        return Instruction.Output.Input(shift, input.sequence, input.inputValues, input.base, input.extraMemory)
     }
 }
 
@@ -124,7 +124,7 @@ class ShiftingInstructionZero : Instruction {
     override fun executeInstruction(input: Instruction.Output.Input): Instruction.Output {
         val param = input.parameter(1)
         val shift = if (param == 0.0) input.parameter(2).toInt() else input.pointerPosition + 3
-        return Instruction.Output.Input(shift, input.sequence, input.values, input.base, input.extraMemory)
+        return Instruction.Output.Input(shift, input.sequence, input.inputValues, input.base, input.extraMemory)
     }
 }
 
@@ -134,7 +134,7 @@ class LessThanInstruction : Instruction {
         val secondParameter = input.parameter(2)
         val value = if (firstParameter < secondParameter) 1.0 else 0.0
         val (outputSequence, extra) = input.updateFromParamPosition(3, "$value")
-        return Instruction.Output.Input(input.pointerPosition + 4, outputSequence, input.values, input.base, extra)
+        return Instruction.Output.Input(input.pointerPosition + 4, outputSequence, input.inputValues, input.base, extra)
     }
 }
 
@@ -144,7 +144,7 @@ class EqualInstruction : Instruction {
         val secondParameter = input.parameter(2)
         val value = if (firstParameter == secondParameter) 1.0 else 0.0
         val (outputSequence, extra) = input.updateFromParamPosition(3, "$value")
-        return Instruction.Output.Input(input.pointerPosition + 4, outputSequence, input.values, input.base, extra)
+        return Instruction.Output.Input(input.pointerPosition + 4, outputSequence, input.inputValues, input.base, extra)
     }
 }
 
@@ -159,7 +159,7 @@ class RelativeBaseInstruction : Instruction {
         val base = input.base + input.parameter(1).toInt()
         return Instruction.Output.Input(input.pointerPosition + 2,
                 input.sequence,
-                input.values,
+                input.inputValues,
                 base,
                 input.extraMemory)
     }

@@ -1,7 +1,7 @@
 package advent
 
 class Day8 : Day {
-    override fun execute1() {
+    override suspend fun execute1() {
         val input = loadFile("day8.txt").first()
         val layerSize = 25 * 6
         val layers = input.chunked(layerSize)
@@ -10,7 +10,7 @@ class Day8 : Day {
         println(result)
     }
 
-    override fun execute2() {
+    override suspend fun execute2() {
         val input = loadFile("day8.txt").first()
         val layerSize = 25 * 6
         val layersCount = input.count() / layerSize

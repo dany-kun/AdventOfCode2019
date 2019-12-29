@@ -4,13 +4,13 @@ import kotlin.math.PI
 import kotlin.math.atan2
 
 class Day10 : Day {
-    override fun execute1() {
+    override suspend fun execute1() {
         val asteroids = loadMap()
         val result = asteroids.maxBy { countVisibleAsteroid(it, asteroids) }!!
         println(result)
     }
 
-    private fun loadMap(): List<Pair<Int, Int>> {
+    private suspend fun loadMap(): List<Pair<Int, Int>> {
         return loadFile("day10.txt").withIndex().flatMap { value ->
             value.value.mapIndexedNotNull { x, c ->
                 if (c != '#')
@@ -29,7 +29,7 @@ class Day10 : Day {
                 .size
     }
 
-    override fun execute2() {
+    override suspend fun execute2() {
         val base = 23 to 29
         val asteroids = loadMap().filter { it != base }
         val sorted = asteroids

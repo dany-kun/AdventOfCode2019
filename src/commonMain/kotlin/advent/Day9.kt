@@ -1,17 +1,17 @@
 package advent
 
 class Day9 : Day {
-    override fun execute1() {
+    override suspend fun execute1() {
         run(1)
     }
 
-    private fun run(input: Int) {
+    private suspend fun run(input: Int) {
         val seq = loadFile("day9.txt").first().split(",")
         val intCodeMachine = IntCodeMachine()
         var input = Instruction.Output.Input(
                 0,
                 seq,
-                sequenceOf(input),
+                SingleInput(input),
                 0,
                 emptyMap()
         )
@@ -25,7 +25,7 @@ class Day9 : Day {
         }
     }
 
-    override fun execute2() {
+    override suspend fun execute2() {
         run(2)
     }
 }

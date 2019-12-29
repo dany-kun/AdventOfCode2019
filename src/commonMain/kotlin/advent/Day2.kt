@@ -1,15 +1,13 @@
 package advent
 
-import java.lang.Exception
-
 class Day2 : Day {
 
-    override fun execute1() {
+    override suspend fun execute1() {
         val output = computeOutput(12, 2)
         println(output)
     }
 
-    override fun execute2() {
+    override suspend fun execute2() {
         for (noun in 0 until 100) {
             for (verb in 0 until 100) {
                 try {
@@ -24,7 +22,7 @@ class Day2 : Day {
         }
     }
 
-    private fun computeOutput(noun: Int, verb: Int): Int {
+    private suspend fun computeOutput(noun: Int, verb: Int): Int {
         val input = loadFile("day2.txt").first().split(",").map { it.toInt() }.toMutableList()
         val inputs = input.also {
             it[1] = noun

@@ -2,7 +2,7 @@ package advent
 
 
 class Day7 : Day {
-    override fun execute1() {
+    override suspend fun execute1() {
         val permutations = mutableListOf<List<Int>>()
         perm(mutableListOf(0, 1, 2, 3, 4), 5, permutations)
 
@@ -11,14 +11,18 @@ class Day7 : Day {
         println(computeOutput(result))
     }
 
-    private fun computeOutput(phases: List<Int>, loop: Boolean = false): Int {
+    private suspend fun computeOutput(phases: List<Int>, loop: Boolean = false): Int {
 
         val input = loadFile("day7.txt").first()
                 .split(",")
         val machine = IntCodeMachine()
         val machineCount = 5
 
-        val machines = (0 until machineCount).map { Instruction.Output.Input(0, input, sequenceOf(phases[it], 0), 0, emptyMap()) }.toMutableList()
+        val machines = (0 until machineCount).map {
+            Instruction.Output.Input(0, input,
+                    InputQueue(listOf(phases[it], 0)),
+                    0, emptyMap())
+        }.toMutableList()
         var count = 0
         var lastOutput = 0
         while (true) {
@@ -33,7 +37,7 @@ class Day7 : Day {
                     val prev = machines[count % machineCount]
                     val values = if (count >= machineCount) sequenceOf(lastOutput) else sequenceOf(phases[count], lastOutput)
                     machines[count % machineCount] = Instruction.Output.Input(prev.pointerPosition, prev.sequence,
-                            values,
+                            InputQueue(values.asIterable()),
                             prev.base, prev.extraMemory)
                 }
                 IntCodeMachine.Result.Terminal -> return lastOutput
@@ -55,7 +59,7 @@ class Day7 : Day {
 //        }
     }
 
-    override fun execute2() {
+    override suspend fun execute2() {
         val permutations = mutableListOf<List<Int>>()
         perm(mutableListOf(5, 6, 7, 8, 9), 5, permutations)
 

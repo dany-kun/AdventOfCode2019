@@ -1,11 +1,11 @@
 package advent
 
 class Day1 : Day {
-    override fun execute1() {
+    override suspend fun execute1() {
         println(compute(false))
     }
 
-    private fun compute(b: Boolean): Int {
+    private suspend fun compute(b: Boolean): Int {
         val lines = loadFile("day1.txt")
         return lines.fold(0) { acc, s ->
             acc + toFuel(s.toInt(), b)
@@ -19,7 +19,7 @@ class Day1 : Day {
         return requiredFuel + toFuel(requiredFuel, addFuelMass)
     }
 
-    override fun execute2() {
+    override suspend fun execute2() {
         println(compute(true))
     }
 }

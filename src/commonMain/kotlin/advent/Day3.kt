@@ -1,10 +1,9 @@
 package advent
 
-import java.lang.IllegalArgumentException
 import kotlin.math.abs
 
 class Day3 : Day {
-    override fun execute1() {
+    override suspend fun execute1() {
         val input = loadFile("day3.txt")
         val line1 = loadPath(input[0])
         val line2 = loadPath(input[1])
@@ -14,7 +13,7 @@ class Day3 : Day {
         println(abs(result.first) + abs(result.second))
     }
 
-    override fun execute2() {
+    override suspend fun execute2() {
         val input = loadFile("day3.txt")
         val line1 = loadPath(input[0])
         val line2 = loadPath(input[1])

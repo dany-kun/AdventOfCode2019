@@ -15,7 +15,7 @@ class Day12 : Day {
                 position.z + velocity.z)
     }
 
-    override fun execute1() {
+    override suspend fun execute1() {
         val result = (0 until 1000).fold(loadMoons()) { moons, _ ->
             moons.map { moon ->
                 val gravity = Coordinates(
@@ -31,7 +31,7 @@ class Day12 : Day {
 
     }
 
-    override fun execute2() {
+    override suspend fun execute2() {
         val moons = loadMoons()
         val x = extractCountDimension(moons) { it.x }.toDouble()
         val y = extractCountDimension(moons) { it.y }.toDouble()
@@ -64,7 +64,7 @@ class Day12 : Day {
         return stepCount
     }
 
-    private fun loadMoons(): List<Moon> {
+    private suspend fun loadMoons(): List<Moon> {
         val positions = loadFile("day12.txt").map {
             val values = it.dropLast(1).drop(1).split(",").map { it.split("=")[1] }
             Coordinates(values[0].toInt(), values[1].toInt(), values[2].toInt())

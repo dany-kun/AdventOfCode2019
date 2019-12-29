@@ -2,7 +2,7 @@ package advent
 
 class Day6 : Day {
 
-    override fun execute1() {
+    override suspend fun execute1() {
         val (graph, unlinkNodes) = buildGraph("COM")
         require(unlinkNodes.isEmpty())
         println(countGraph(0, "COM", graph))
@@ -13,7 +13,7 @@ class Day6 : Day {
         return distance + links.map { el -> countGraph(distance + 1, el, graph) }.sum()
     }
 
-    private fun buildGraph(start: String): Pair<MutableMap<String, MutableList<String>>, MutableList<Pair<String, String>>> {
+    private suspend fun buildGraph(start: String): Pair<MutableMap<String, MutableList<String>>, MutableList<Pair<String, String>>> {
         return loadFile("day6.txt")
                 .fold(mutableMapOf(start to mutableListOf<String>()) to mutableListOf()) { (cachedCount, unknownNodes), line ->
                     val (left, right) = line.split(")").run { first() to last() }
@@ -41,7 +41,7 @@ class Day6 : Day {
         return mapOf(newLinkedNode to newLinks).plus(missing)
     }
 
-    override fun execute2() {
+    override suspend fun execute2() {
         val (graph, unlinkNodes) = buildGraph("COM")
         require(unlinkNodes.isEmpty())
         findLinks(graph)

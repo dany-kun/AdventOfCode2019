@@ -5,19 +5,19 @@ import kotlin.math.abs
 class Day15 : Day {
 
 
-    override fun execute1() {
+    override suspend fun execute1() {
         val result = loadMap()
         drawMap(result)
     }
 
-    private fun loadMap(): Map<Pair<Int, Int>, String> {
+    private suspend fun loadMap(): Map<Pair<Int, Int>, String> {
         val isa = loadFile("day15.txt").first().split(",")
         val machine = IntCodeMachine()
 
-        var instruction = Instruction.Output.Input(0, isa, emptySequence(), 0, emptyMap())
+        var instruction = Instruction.Output.Input(0, isa, IntCodeInput(), 0, emptyMap())
         val visitedPositions = mutableMapOf((0 to 0) to "D")
-        val result = findShortestPath(0, visitedPositions, 0 to 0, emptyList(), emptyList()) {
-            val input = Instruction.Output.Input(instruction.pointerPosition, instruction.sequence, sequenceOf(it), instruction.base, instruction.extraMemory)
+        return findShortestPath(0, visitedPositions, 0 to 0, emptyList(), emptyList()) {
+            val input = Instruction.Output.Input(instruction.pointerPosition, instruction.sequence, SingleInput(it), instruction.base, instruction.extraMemory)
             when (val out = machine.runInstructions(input)) {
                 is IntCodeMachine.Result.Output -> {
                     instruction = out.input
@@ -26,7 +26,6 @@ class Day15 : Day {
                 IntCodeMachine.Result.Terminal -> TODO()
             }
         }
-        return result
     }
 
     private fun drawMap(result: Map<Pair<Int, Int>, String>) {
@@ -141,7 +140,7 @@ class Day15 : Day {
         }
     }
 
-    override fun execute2() {
+    override suspend fun execute2() {
         val result = loadMap()
         val start = result.entries.first { it.value == "0" }.key
         val paths = result.filterValues { it != "X" }.keys

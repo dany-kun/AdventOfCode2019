@@ -4,12 +4,12 @@ typealias WeightedElement = Pair<Int, String>
 
 class Day14 : Day {
 
-    override fun execute1() {
+    override suspend fun execute1() {
         val result = findOreCount(1)
         println(result)
     }
 
-    private fun findOreCount(fuelCount: Long): Long {
+    private suspend fun findOreCount(fuelCount: Long): Long {
         val reactions: Map<WeightedElement, List<WeightedElement>> = loadFile("day14.txt").map {
             it.split(" =>").let { it.last().trim().asWeighted to it.first().split(", ").map { it.asWeighted } }
         }.toMap()
@@ -54,7 +54,7 @@ class Day14 : Day {
     private val String.asWeighted: WeightedElement
         get() = trim().split(" ").let { it.first().toInt() to it.last().trim() }
 
-    override fun execute2() {
+    override suspend fun execute2() {
         val minimumFuel = 1000000000000 / findOreCount(1).also { println(it) }
         var fuelCount = minimumFuel * 2
         // Use step to make computations faster
