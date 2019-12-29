@@ -9,13 +9,24 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.css.*
+import org.w3c.dom.Element
 import react.*
 import styled.css
 import styled.styledDiv
+import react.child
+import react.dom.jsStyle
+import react.dom.render
+import kotlin.browser.document
+
+fun renderDay17(root: Element?) {
+    render(root) {
+        child(Day17UI)
+    }
+}
 
 interface AppProps : RProps
 
-val Day17UI by functionalComponent<AppProps> {
+private val Day17UI by functionalComponent<AppProps> {
     val scope = MainScope()
 
     val pixels = useState(emptyList<List<Char>>())
@@ -46,10 +57,8 @@ val Day17UI by functionalComponent<AppProps> {
 fun RBuilder.pixel(value: String, position: Pair<Int, Int>) {
     styledDiv {
         key = position.toString()
-        css {
-            gridColumn = GridColumn("${position.second + 1} / span 1")
-            gridRow = GridRow("${position.first + 1} / span 1")
-        }
+        attrs.jsStyle.gridColumn = GridColumn("${position.second + 1} / span 1")
+        attrs.jsStyle.gridRow = GridRow("${position.first + 1} / span 1")
         +value
     }
 }

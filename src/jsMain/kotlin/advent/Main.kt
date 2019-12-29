@@ -1,15 +1,14 @@
 package advent
 
+import org.w3c.dom.HTMLDivElement
 import react.FunctionalComponent
-import react.child
-import react.dom.render
 import kotlin.browser.document
+
 import kotlin.reflect.KProperty
 
 fun main() {
-    render(document.getElementById("content")) {
-        child(Day17UI)
-    }
+    val root = document.getElementById("content") as HTMLDivElement
+    renderDay13(root)
 }
 
 
