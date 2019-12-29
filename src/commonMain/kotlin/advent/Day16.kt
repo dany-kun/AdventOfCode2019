@@ -26,29 +26,39 @@ class Day16 : Day {
 
     override suspend fun execute2() {
         val input = loadFile("day16.txt").first()
-        val s = "02935109699940807407585447034323"
-        val msg = (0 until 10000).joinToString("") { s }
+        val msg = (0 until 10000).joinToString("") { input }
         // The rule for the last digit after half the string length is easier since all matrices coefficients == 1
         require(msg.take(7).toInt() > msg.length / 2)
         val start = msg.drop(msg.take(7).toInt()).reversed()
 
         // Recipe is to take the value at position i - 1 of current phase and add it to position i of previous phase
         // -> Empirical equation: f(phase, index) = f(phase - 1, index) + f(phase, index - 1)
-        // This gives us the formula f(phase, index) = SUM[(phase^(index - k) * f(o, k)] with k from 0 to index
-        // Using the fact that f(phase, 0) is constant over phase
 
-        println("Sum: ${s.sumBy { it.toString().toInt() }}")
         // Working but not efficient
-        val result = (0 until 100).fold(start) { reversedInput, _ ->
-            // Recipe is to take the value at position i - 1 of current phase and add it to position i of previous phase
-            println("${reversedInput[0]} - ${reversedInput[s.length]} - ${reversedInput[s.length * 2]} - ${reversedInput[s.length * 3]} - ${reversedInput[s.length * 4]}")
-            reversedInput.fold("") { builtString, newChar ->
-                val previouslyBuiltItem = builtString.lastOrNull() ?: return@fold newChar.toString()
-                val newValue = previouslyBuiltItem.toString().toInt() + newChar.toString().toInt()
-                builtString + newValue.toString().last()
+//        val result = (0 until 100).fold(start) { reversedInput, _ ->
+//            // Recipe is to take the value at position i - 1 of current phase and add it to position i of previous phase
+//            reversedInput.fold("") { builtString, newChar ->
+//                val previouslyBuiltItem = builtString.lastOrNull() ?: return@fold newChar.toString()
+//                val newValue = previouslyBuiltItem.toString().toInt() + newChar.toString().toInt()
+//                builtString + newValue.toString().last()
+//            }
+//        }
+//        println(result.reversed().take(8))
+
+        // Same thing as above but loop on the phase first
+        val result = mutableListOf<Int>()
+        start.foldIndexed(listOf<Int>()) { i, acc, origin ->
+            if (acc.isEmpty()) return@foldIndexed (0 until 100).map { origin.toString().toInt() }
+            (0 until 100).fold(emptyList<Int>()) { built, phase ->
+                val newSum = acc[phase] + (built.lastOrNull() ?: origin.toString().toInt())
+                built.plusElement("$newSum".last().toString().toInt())
+            }.also {
+                if (i > start.length - 9) {
+                    result.add(it.last())
+                }
             }
         }
-//        println(result.take(10))
+        println(result.reversed().joinToString(""))
     }
 
 }
