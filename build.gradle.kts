@@ -48,8 +48,8 @@ kotlin {
                 implementation(npm("react-dom", "^$reactVersion"))
                 implementation(npm("inline-style-prefixer", "^5.1.0"))
                 implementation(npm("styled-components", "^4.3.2"))
-
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.3.3")
+                implementation("io.data2viz:d2v-data2viz-js:0.8.0-RC1")
             }
         }
 

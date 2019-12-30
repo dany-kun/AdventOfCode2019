@@ -3,12 +3,9 @@ package advent
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.css.*
+import kotlinx.css.Display
+import kotlinx.css.display
 import org.w3c.dom.HTMLDivElement
 import react.*
 import react.dom.render
