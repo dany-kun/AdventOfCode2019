@@ -27,12 +27,15 @@ kotlin {
             dependencies {
                 implementation(kotlin("stdlib-common"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:1.3.3")
+                implementation("io.data2viz:d2v-data2viz-common:0.8.0-RC1")
             }
         }
         val jvmMain by getting {
             dependencies {
                 implementation(kotlin("stdlib-jdk8"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.3.3")
+                implementation("io.data2viz:d2v-data2viz-jfx:0.8.0-RC1")
             }
         }
         val jsMain by getting {

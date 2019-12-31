@@ -12,7 +12,7 @@ import react.dom.render
 import styled.css
 import styled.styledDiv
 
-fun renderDay13(root: HTMLDivElement?) {
+fun renderDay13React(root: HTMLDivElement?) {
     render(root) {
         child(Day13UI)
     }
@@ -29,8 +29,18 @@ private val Day13UI by functionalComponent<Day13Props> {
         if (pixels.first.isEmpty()) {
             scope.launch {
                 Day13 {
-                     delay(1)
-                     pixels.second(it)
+                    delay(1)
+                    when (it) {
+                        is Day13.UI.Board -> {
+                            if (Day13.hasBallAndPaddle(it.map)) {
+                                pixels.second(it.map)
+                            } else {
+                                Unit
+                            }
+                        }
+                        is Day13.UI.Score -> {
+                        }
+                    }.let { }
                 }.execute2()
             }
         }

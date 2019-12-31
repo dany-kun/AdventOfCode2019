@@ -2,13 +2,21 @@ package advent
 
 import kotlinx.coroutines.flow.*
 
-class Day13(private val emitItem: suspend (Map<Int, Map<Int, Int>>) -> Unit = {}) : Day {
+class Day13(private val emitItem: suspend (UI) -> Unit = {}) : Day {
+
+    sealed class UI {
+        data class Board(val map: Map<Int, Map<Int, Int>>) : UI()
+        data class Score(val value: String, val map: Map<Int, Map<Int, Int>>) : UI()
+    }
+
     override suspend fun execute1() {
         val input = loadFile("day13.txt").first().split(",")
 
         var latest: Map<Int, Map<Int, Int>>? = null
 
-        loadMap(input).onEach { latest = it }
+        loadMap(input)
+                .filter { it is UI.Board }
+                .onEach { latest = (it as UI.Board).map }
                 .collect()
 
         println(latest!!.entries.sumBy { it.value.count { it.value == 2 } })
@@ -17,21 +25,12 @@ class Day13(private val emitItem: suspend (Map<Int, Map<Int, Int>>) -> Unit = {}
     override suspend fun execute2() {
         val input = loadFile("day13.txt").first().split(",").toMutableList().apply { set(0, "2") }.toList()
         loadMap(input, true)
-                // .map { drawnMap(it, findBounds(it)) }
                 .onEach { emitItem(it) }
                 .collect()
     }
 
-    private fun findBounds(result: Map<Int, Map<Int, Int>>): Square {
-        val (minY, maxY) = result.keys.min()!! to result.keys.max()!!
-        val (minX, maxX) = result.entries.flatMap { it.value.keys }.let { it.min()!! to it.max()!! }
-        return Square(minX, minY, maxX, maxY)
-    }
-
-    data class Square(val left: Int, val top: Int, val right: Int, val bottom: Int)
-
     private fun loadMap(input: List<String>,
-                        showScore: Boolean = false): Flow<Map<Int, Map<Int, Int>>> {
+                        showScore: Boolean = false): Flow<UI> {
         val machine = IntCodeMachine()
         var board = mapOf<Int, Map<Int, Int>>()
         val inputValues = GameInput { board }
@@ -42,7 +41,7 @@ class Day13(private val emitItem: suspend (Map<Int, Map<Int, Int>>) -> Unit = {}
                 state = when (val out = machine.runInstructions(state)) {
                     is IntCodeMachine.Result.Output -> {
                         if (inputValues.gameStarted) {
-                            emit(board)
+                            emit(UI.Board(board))
                         }
                         outputs.add(out.value.toInt())
                         if (outputs.size == 3) {
@@ -52,6 +51,7 @@ class Day13(private val emitItem: suspend (Map<Int, Map<Int, Int>>) -> Unit = {}
                             outputs.clear()
                             if (showScore && x == -1 && y == 0) {
                                 println(value)
+                                emit(UI.Score(value.toString(), board))
                                 out.input
                             } else {
                                 val newXs = board[y]?.minus(x)?.plus(x to value) ?: mapOf(x to value)
@@ -76,7 +76,7 @@ class Day13(private val emitItem: suspend (Map<Int, Map<Int, Int>>) -> Unit = {}
             gameStarted = true
             val board = game()
             val boardCoordinates = board.entries.flatMap { (y, v) ->
-                 v.entries.map { (x, c) -> (x to y) to c }.associate { it }.entries
+                v.entries.map { (x, c) -> (x to y) to c }.associate { it }.entries
             }.associate { it.key to it.value }
             val ballX = boardCoordinates.entries.find { it.value == 4 }!!.key.first
             val paddleX = boardCoordinates.entries.find { it.value == 3 }!!.key.first
@@ -90,6 +90,16 @@ class Day13(private val emitItem: suspend (Map<Int, Map<Int, Int>>) -> Unit = {}
     }
 
     companion object {
+
+        const val WALL_VALUE = 1
+        const val BRICK_VALUE = 2
+        const val PADDLE_VALUE = 3
+        const val BALL_VALUE = 4
+
+        fun hasBallAndPaddle(map: Map<Int, Map<Int, Int>>) =
+                map.any { it.value.any { it.value == Day13.BALL_VALUE } } &&
+                        map.any { it.value.any { it.value == Day13.PADDLE_VALUE } }
+
         fun Int.toPixelValue(): String {
             return when (this) {
                 0 -> " "
@@ -102,30 +112,5 @@ class Day13(private val emitItem: suspend (Map<Int, Map<Int, Int>>) -> Unit = {}
         }
     }
 
-
-    enum class Direction {
-        LEFT_DOWN {
-            override fun move(position: Pair<Int, Int>): Pair<Int, Int> {
-                return position.first - 1 to position.second + 1
-            }
-        },
-        LEFT_UP {
-            override fun move(position: Pair<Int, Int>): Pair<Int, Int> {
-                return position.first - 1 to position.second - 1
-            }
-        },
-        RIGHT_UP {
-            override fun move(position: Pair<Int, Int>): Pair<Int, Int> {
-                return position.first + 1 to position.second - 1
-            }
-        },
-        RIGHT_DOWN {
-            override fun move(position: Pair<Int, Int>): Pair<Int, Int> {
-                return position.first + 1 to position.second + 1
-            }
-        };
-
-        abstract fun move(position: Pair<Int, Int>): Pair<Int, Int>
-    }
 
 }

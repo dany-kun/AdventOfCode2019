@@ -1,50 +1,12 @@
 package advent.dataviz
 
-import advent.Day13
-import advent.Day13.Companion.toPixelValue
 import io.data2viz.color.Colors
-import io.data2viz.viz.GroupNode
-import io.data2viz.viz.HasStroke
-import io.data2viz.viz.RectNode
-import io.data2viz.viz.bindRendererOn
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import org.w3c.dom.HTMLCanvasElement
-import org.w3c.dom.HTMLDivElement
-import kotlin.browser.document
+import io.data2viz.viz.*
 
 private const val CELL_SIZE = 30.0
 
-fun showDay13Viz(root: HTMLDivElement) {
-    val canvas = document.createElement("canvas") as HTMLCanvasElement
-    canvas.setAttribute("width", "500")
-    canvas.setAttribute("height", "500")
-    canvas.width = 500
-    canvas.height = 500
-
-    root.appendChild(canvas)
-
-    val scope = MainScope()
-
-    scope.launch {
-        flow {
-            Day13 { emit(it) }.execute2()
-        }
-                .take(300)
-                .map {
-                    delay(1)
-                    it
-                }
-                .onEach { renderGame(it, canvas) }
-                .collect()
-    }
-}
-
-
-private fun renderGame(map: Map<Int, Map<Int, Int>>, canvas: HTMLCanvasElement) {
-    io.data2viz.viz.viz {
+fun day13BoardViz(map: Map<Int, Map<Int, Int>>): Viz {
+    return viz {
         group {
             width = ((map.flatMap { it.value.keys }.max() ?: 0) + 1) * CELL_SIZE
             height = ((map.keys.max() ?: 0) + 1) * CELL_SIZE
@@ -69,7 +31,25 @@ private fun renderGame(map: Map<Int, Map<Int, Int>>, canvas: HTMLCanvasElement) 
                 }
             }
         }
-    }.bindRendererOn(canvas)
+    }
+}
+
+fun day13ScoreViz(score: String): Viz {
+    return viz {
+        width = 300.0
+        height = 50.0
+        group {
+            text {
+                this.x = width / 2
+                this.y = height / 2
+                textAlign = textAlign(horizontal = TextHAlign.MIDDLE, vertical = TextVAlign.MIDDLE)
+                textContent = "Score: $score"
+                fontSize = 20.0
+                textColor = Colors.Web.purple
+            }
+
+        }
+    }
 }
 
 private fun GroupNode.rect(x: Double, y: Double, block: RectNode.() -> Unit = {}) {
