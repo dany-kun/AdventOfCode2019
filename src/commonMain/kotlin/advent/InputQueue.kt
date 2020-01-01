@@ -27,7 +27,6 @@ class InputQueue(values: Iterable<Int>) : IntCodeInput {
     private var queue = values.toMutableList()
 
     override fun next(): Int {
-        println(queue.joinToString("") { it.toChar().toString() })
         return queue.first().also { queue.removeAt(0) }
     }
 }

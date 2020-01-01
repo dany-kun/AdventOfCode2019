@@ -65,6 +65,12 @@ internal class Day13DataVizJavaFx : Application() {
                 }
     }
 
+    companion object {
+        fun launch() {
+            launch(Day13DataVizJavaFx::class.java)
+        }
+    }
+
 }
 
 
