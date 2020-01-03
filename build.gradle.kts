@@ -12,13 +12,9 @@ repositories {
 kotlin {
     js {
         browser {
-            //            runTask {
-//                outputFileName = "browser.js"
-//                devServer = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.DevServer(
-//                        contentBase = listOf("$buildDir/processedResources/js/main"),
-//                        port = 8080
-//                )
-//            }
+            runTask {
+                outputFileName = "AdventOfCode2019.js"
+            }
         }
     }
     jvm()

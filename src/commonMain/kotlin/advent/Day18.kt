@@ -2,7 +2,13 @@ package advent
 
 import kotlin.math.min
 
-class Day18 : Day {
+class Day18(private val emitter: suspend (UI) -> Unit = {}) : Day {
+
+
+    sealed class UI {
+        data class Graph(val graph: Map<Cell, Map<Cell, Int>>): UI()
+    }
+
     override suspend fun execute1() {
         val map = buildMap()
         val current = map.entries.single { it.value is Cell.Character }
@@ -12,11 +18,12 @@ class Day18 : Day {
 //                current.key,
 //                keys.toSet())
         val scannedMap = scanMap(map, current.value, mapOf(current.value to emptyMap()), listOf(current.key))
+        emitter(UI.Graph(scannedMap))
         val result = bruteForceScannedMap(scannedMap, Cell.Character, 0, Int.MAX_VALUE)
         println(result)
     }
 
-    private fun bruteForceScannedMap(scannedMap: Map<Cell, Map<Cell, Int>>, current: Cell, count: Int, best: Int): Int {
+    private suspend fun bruteForceScannedMap(scannedMap: Map<Cell, Map<Cell, Int>>, current: Cell, count: Int, best: Int): Int {
         val reachableNodes = scannedMap[current]!!
         val entries = reachableNodes.entries.filter { it.key is Cell.Key }
         return entries.fold(best) { acc, (key, distance) ->
@@ -27,6 +34,7 @@ class Day18 : Day {
                     val mapWithoutDoor = popNodeAndRelink(scannedMap, Cell.Door(key.value.toUpperCase()))
                     val mapWithoutCurrent = popNodeAndRelink(mapWithoutDoor, current).filterValues { it.values.isNotEmpty() }
                     if (mapWithoutCurrent.isEmpty()) return@fold newCount.also { println(it) }
+                    emitter(UI.Graph(mapWithoutCurrent))
                     bruteForceScannedMap(mapWithoutCurrent, key, newCount, acc)
                 }
                 is Cell.Door -> acc

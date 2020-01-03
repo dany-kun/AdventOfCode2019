@@ -1,5 +1,6 @@
 package advent
 
+import advent.dataviz.renderDay18Viz
 import org.w3c.dom.HTMLDivElement
 import react.FunctionalComponent
 import kotlin.browser.document
@@ -8,7 +9,7 @@ import kotlin.reflect.KProperty
 
 fun main() {
     val root = document.getElementById("content") as HTMLDivElement
-    renderDay13React(root)
+    renderDay18Viz(root)
 }
 
 
