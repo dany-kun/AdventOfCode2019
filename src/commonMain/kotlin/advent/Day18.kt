@@ -6,17 +6,12 @@ class Day18(private val emitter: suspend (UI) -> Unit = {}) : Day {
 
 
     sealed class UI {
-        data class Graph(val graph: Map<Cell, Map<Cell, Int>>): UI()
+        data class Graph(val graph: Map<Cell, Map<Cell, Int>>) : UI()
     }
 
     override suspend fun execute1() {
         val map = buildMap()
         val current = map.entries.single { it.value is Cell.Character }
-//        val keys = map.values.filterIsInstance<Cell.Key>()
-//        val result = bruteForce(map,
-//                emptyList<String>() to 0, emptyList<String>() to Int.MAX_VALUE,
-//                current.key,
-//                keys.toSet())
         val scannedMap = scanMap(map, current.value, mapOf(current.value to emptyMap()), listOf(current.key))
         emitter(UI.Graph(scannedMap))
         val result = bruteForceScannedMap(scannedMap, Cell.Character, 0, Int.MAX_VALUE)
@@ -26,7 +21,13 @@ class Day18(private val emitter: suspend (UI) -> Unit = {}) : Day {
     private suspend fun bruteForceScannedMap(scannedMap: Map<Cell, Map<Cell, Int>>, current: Cell, count: Int, best: Int): Int {
         val reachableNodes = scannedMap[current]!!
         val entries = reachableNodes.entries.filter { it.key is Cell.Key }
-        return entries.fold(best) { acc, (key, distance) ->
+        // Prioritize leafs
+        val smartEntries = entries.filter { scannedMap[it.key]?.size == 1 }
+        val e = when {
+            smartEntries.isNotEmpty() -> smartEntries
+            else -> entries
+        }
+        return e.fold(best) { acc, (key, distance) ->
             when (key) {
                 is Cell.Key -> {
                     val newCount = count + distance
