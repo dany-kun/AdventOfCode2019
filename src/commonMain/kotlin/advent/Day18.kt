@@ -11,39 +11,64 @@ class Day18(private val emitter: suspend (UI) -> Unit = {}) : Day {
 
     override suspend fun execute1() {
         val map = buildMap()
-        val current = map.entries.single { it.value is Cell.Character }
+
+//        val bestPath = findBestPath(map, Cell.Character, mapOf(listOf(Cell.Character) to 0), listOf(Cell.Character))
+// println(bestPath.minBy { it.value })
+        val current = map.entries.single { it.value == Cell.Character }
+
+        // LinkedList
+        // println(createNodes(map, Node(Cell.Character, emptyMap()), listOf(current.key), emptyMap()))
+
         val scannedMap = scanMap(map, current.value, mapOf(current.value to emptyMap()), listOf(current.key))
-        emitter(UI.Graph(scannedMap))
+        // emitter(UI.Graph(scannedMap))
         val result = bruteForceScannedMap(scannedMap, Cell.Character, 0, Int.MAX_VALUE)
         println(result)
     }
 
     private suspend fun bruteForceScannedMap(scannedMap: Map<Cell, Map<Cell, Int>>, current: Cell, count: Int, best: Int): Int {
         val reachableNodes = scannedMap[current]!!
-        val entries = reachableNodes.entries.filter { it.key is Cell.Key }
-        // Prioritize leafs
-        val smartEntries = entries.filter { scannedMap[it.key]?.size == 1 }
+        val keys = reachableNodes.keys.filterIsInstance<Cell.Key>()
+        val doors = reachableNodes.keys.filterIsInstance<Cell.Door>()
+        val smartEntries = keys.filter { scannedMap[it]?.size == 1 }
         val e = when {
+            // Prioritize leafs
             smartEntries.isNotEmpty() -> smartEntries
-            else -> entries
-        }
-        return e.fold(best) { acc, (key, distance) ->
-            when (key) {
-                is Cell.Key -> {
-                    val newCount = count + distance
-                    if (newCount >= acc) return@fold acc
-                    val mapWithoutDoor = popNodeAndRelink(scannedMap, Cell.Door(key.value.toUpperCase()))
-                    val mapWithoutCurrent = popNodeAndRelink(mapWithoutDoor, current).filterValues { it.values.isNotEmpty() }
-                    if (mapWithoutCurrent.isEmpty()) return@fold newCount.also { println(it) }
-                    emitter(UI.Graph(mapWithoutCurrent))
-                    bruteForceScannedMap(mapWithoutCurrent, key, newCount, acc)
-                }
-                is Cell.Door -> acc
-                Cell.Character,
-                Cell.Path -> throw IllegalArgumentException("No path in nodes")
+            // When all nodes are keys, start with the closest ones
+            // or when all doors in nodes can be opened by keys in nodes, start with the closest key
+            reachableNodes.size == keys.size || doors.all { keys.contains(Cell.Key(it.value.toLowerCase())) } -> keys.sortedBy { reachableNodes[it]!! }.take(1)
+            else -> {
+                keys
             }
         }
+        // println(e)
+        return e.fold(best) { acc, key ->
+            val distance = reachableNodes[key]!!
+            val newCount = count + distance
+            if (newCount >= acc) return@fold acc
+            val mapWithoutDoor = popNodeAndRelink(scannedMap, Cell.Door(key.value.toUpperCase()))
+            val mapWithoutCurrent = popNodeAndRelink(mapWithoutDoor, current).filterValues { it.values.isNotEmpty() }
+            if (mapWithoutCurrent.isEmpty()) return@fold newCount.also { println(it) }
+            // emitter(UI.Graph(mapWithoutCurrent))
+            bruteForceScannedMap(mapWithoutCurrent, key, newCount, acc)
+        }
+
     }
+
+    private fun doorsOpeningFromAnotherBranch(node: Node, keys: Set<Cell.Key>, doors: Set<Cell.Door>): Set<Cell.Door> {
+        return node.links.entries.fold(doors) { acc, (node, _) ->
+            val updatedKeys = if (node.cell is Cell.Key) keys.plus(node.cell) else keys
+            val updatedDoors = if (node.cell is Cell.Door) acc.plus(node.cell) else acc
+            val filteredDoors = updatedDoors.filter { !updatedKeys.contains(Cell.Key(it.value.toLowerCase())) }.toSet()
+            doorsOpeningFromAnotherBranch(node, updatedKeys, filteredDoors)
+        }
+    }
+
+    private fun buildNode(start: Cell, map: Map<Cell, Map<Cell, Int>>, visitedNode: Set<Cell>): Node {
+        return Node(start, map[start]!!
+                .filterKeys { !visitedNode.contains(it) }
+                .map { buildNode(it.key, map, visitedNode.plus(it.key).toSet()) to it.value }.toMap())
+    }
+
 
     private fun popNodeAndRelink(scannedMap: Map<Cell, Map<Cell, Int>>, door: Cell): Map<Cell, Map<Cell, Int>> {
         val unlockedDoor = scannedMap[door] ?: emptyMap()
@@ -88,52 +113,8 @@ class Day18(private val emitter: suspend (UI) -> Unit = {}) : Day {
         }
     }
 
+    data class Node(val cell: Cell, val links: Map<Node, Int>)
 
-    // Brute Force : do not scale ;)
-    private fun bruteForce(map: Map<Pair<Int, Int>, Cell>,
-                           current: Pair<List<String>, Int>,
-                           best: Pair<List<String>, Int>,
-                           currentPosition: Pair<Int, Int>,
-                           keys: Set<Cell.Key>): Pair<List<String>, Int> {
-        val accessibleKeys = nextKeys(currentPosition, listOf(currentPosition), map, emptyMap())
-        return accessibleKeys.entries.fold(best) { acc, (keyCoord, count) ->
-            val key = map[keyCoord] as Cell.Key
-            val updatedKeys = keys.minus(key)
-            val pair = current.first.plus(key.value) to current.second + count
-            when {
-                pair.second >= acc.second -> acc
-                updatedKeys.isEmpty() -> pair.also { println(it) }
-                else -> {
-                    val updatedMap = updateMap(map, keyCoord, currentPosition, key.value)
-                    bruteForce(updatedMap, pair, acc, keyCoord, updatedKeys)
-                }
-            }
-        }
-    }
-
-    private fun updateMap(map: Map<Pair<Int, Int>, Cell>, keyCoord: Pair<Int, Int>, current: Pair<Int, Int>, element: String): Map<Pair<Int, Int>, Cell> {
-        val doors = map.filter { (it.value as? Cell.Door)?.value?.toLowerCase() == element }.keys
-        return map.minus(current).plus(current to Cell.Path) // Remove current character
-                .minus(doors).plus(doors.associateWith { Cell.Path }) // Replace opened door with paths
-                .minus(keyCoord).plus(keyCoord to Cell.Path) // Move character
-    }
-
-    private fun nextKeys(currentCell: Pair<Int, Int>, visitedCells: List<Pair<Int, Int>>,
-                         map: Map<Pair<Int, Int>, Cell>, aggr: Map<Pair<Int, Int>, Int>): Map<Pair<Int, Int>, Int> {
-        val closeCells = nextVisitableCells(currentCell, visitedCells)
-        return closeCells.fold(aggr) { acc, it ->
-            when (map[it]) {
-                Cell.Character, is Cell.Door, null -> acc
-                is Cell.Key -> {
-                    // require(acc[it] == null)
-                    // When multiple paths goes to the same key, use the shortest one
-                    val length = visitedCells.count() + 1
-                    acc.plus(it to (acc[it]?.let { min(it, length) } ?: length))
-                }
-                Cell.Path -> nextKeys(it, visitedCells.plus(it), map, acc)
-            }
-        }
-    }
 
     private fun nextVisitableCells(currentCell: Pair<Int, Int>, visitedCells: List<Pair<Int, Int>>): List<Pair<Int, Int>> {
         return listOf(

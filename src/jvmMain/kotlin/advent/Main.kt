@@ -2,5 +2,5 @@ package advent
 
 
 suspend fun main() {
-    Day18().execute1()
+    Day20().execute2()
 }
