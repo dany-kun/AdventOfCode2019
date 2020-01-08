@@ -1,32 +1,92 @@
 package advent
 
+typealias BoardNodes = Map<Day20.Cell.Road, Map<Day20.Cell.Road, Int>>
+
 class Day20 : Day {
 
     data class BoardBound(val left: Int, val top: Int, val right: Int, val bottom: Int)
 
     override suspend fun execute1() {
         val (board, correctPaths) = findPaths(false)
-        println(correctPaths.map { it.filter { board[it.x to it.y] is Cell.Path }.count() - 1 })
+        println(correctPaths.map { it.pathLength(board) })
     }
 
-    private suspend fun findPaths(withLevels: Boolean): Pair<Map<Pair<Int, Int>, Cell>, List<Set<Step>>> {
-        val input = loadFile("day20.txt").mapIndexed { y, s -> s.mapIndexed { x, c -> x to y to c } }.flatten().toMap()
-        val boardBound = buildBoard(input)
-        val paths = input.filterValues { it == '.' }
-        val board = paths.entries.fold(emptyMap<Pair<Int, Int>, Cell>()) { wipBoard, (position, _) ->
-            val base = wipBoard.plus(position to Cell.Path)
-            findEntries(input, position, emptyList())?.let { base.plus(it) } ?: base
+    private suspend fun findPaths(withLevels: Boolean): Pair<BoardNodes, List<Set<Step>>> {
+        val board = createBoard()
+        val startingLevel = if (withLevels) 0 else -1
+        val result = board.findAllPaths(setOf(Step(Cell.Road.Out("AA"), startingLevel)), emptyList(), withLevels)
+        return board to result
+    }
+
+    private fun Set<Step>.pathLength(boardNodes: BoardNodes): Int {
+        return zipWithNext { a, b -> boardNodes[a.node]!![b.node] ?: 0 }.sum() - 1
+    }
+
+    private fun BoardNodes.findAllPaths(steps: Set<Step>, result: List<Set<Step>>, withLevels: Boolean): List<Set<Step>> {
+        val previousStep = steps.last()
+        val level = previousStep.level
+        return this[previousStep.node]!!.keys.fold(result) { acc, node ->
+            val step = Step(node, level)
+            val updatedSteps = steps.plus(step)
+            when {
+                // steps.contains(step) -> acc
+                steps.any { it.node == node && level > it.level } -> acc
+                node.value == "ZZ" -> if (level <= 0) acc.plusElement(updatedSteps) else acc
+                node.value == "AA" -> acc
+                else -> {
+                    val nextStep = when (node) {
+                        is Cell.Road.In -> Step(Cell.Road.Out(node.value), if (level < 0) level else level + 1)
+                        is Cell.Road.Out -> Step(Cell.Road.In(node.value), if (level < 0) level else level - 1)
+                    }
+                    findAllPaths(updatedSteps.plus(nextStep), acc, withLevels)
+                }
+            }
         }
-        val end = board.entries.first { it.value == STARTING_CELL }.toPair()
-        val correctPaths = board.findAllPaths(
-                boardBound,
-                end,
-                setOf(Step(end.first.first, end.first.second, if (withLevels) 0 else -1)),
-                emptyList())
-        return Pair(board, correctPaths)
     }
 
-    private fun buildBoard(input: Map<Pair<Int, Int>, Char>): BoardBound {
+    private suspend fun createBoard(): BoardNodes {
+        val input = loadFile("day20.txt").mapIndexed { y, s -> s.mapIndexed { x, c -> x to y to c } }.flatten().toMap()
+        val boardBound = buildBoardBound(input)
+        val characters = createPortals(input, input.filter { it.value.toInt() in (65..90) }.keys, boardBound)
+        val paths = input.filterValues { it == '.' }.mapValues { Cell.Path }
+        return characters.map { it.value to findLink(paths.plus(characters), setOf(it.key), 0, emptyMap()) }.toMap()
+    }
+
+    private fun findLink(paths: Map<Pair<Int, Int>, Cell>, visitedLinks: Set<Pair<Int, Int>>, distance: Int, result: Map<Cell.Road, Int>): Map<Cell.Road, Int> {
+        val start = visitedLinks.last()
+        return nextCells(start.first, start.second)
+                .filter { !visitedLinks.contains(it) }
+                .fold(result) { acc, coord ->
+                    when (val cell = paths[coord]) {
+                        Cell.Path -> findLink(paths, visitedLinks.plus(coord), distance + 1, acc)
+                        is Cell.Road -> acc.plus(cell to distance)
+                        null -> acc
+                    }
+
+                }
+    }
+
+    private fun createPortals(input: Map<Pair<Int, Int>, Char>, chars: Set<Pair<Int, Int>>, boardBound: BoardBound): Map<Pair<Int, Int>, Cell.Road> {
+        return chars.mapNotNull { (x, y) ->
+            val nextCells = nextCells(x, y)
+            val otherChar = nextCells.singleOrNull { input[it]?.toInt() in (65..90) }
+            val road = nextCells.singleOrNull { input[it] == '.' }
+            if (otherChar != null && road != null) {
+                val value = "${input[otherChar]}${input[x to y]}"
+                val cell = when {
+                    road.first == x && road.second > y -> if (y < boardBound.top) Cell.Road.Out(value) else Cell.Road.In(value)
+                    road.first == x -> if (y > boardBound.bottom) Cell.Road.Out(value.reversed()) else Cell.Road.In(value.reversed())
+                    road.first > x -> if (x < boardBound.left) Cell.Road.Out(value) else Cell.Road.In(value)
+                    else -> if (x > boardBound.right) Cell.Road.Out(value.reversed()) else Cell.Road.In(value.reversed())
+                }
+                (x to y) to cell
+            } else {
+                null
+            }
+        }.toMap()
+    }
+
+    private fun buildBoardBound(input: Map<Pair<Int, Int>, Char>): BoardBound {
         return input.filterValues { it == '#' }.let { map ->
             val left = map.minBy { it.key.first }!!.key.first
             val top = map.minBy { it.key.second }!!.key.second
@@ -36,77 +96,7 @@ class Day20 : Day {
         }
     }
 
-    data class Step(val x: Int, val y: Int, val level: Int)
-
-    private fun Map<Pair<Int, Int>, Cell>.findAllPaths(
-            bound: BoardBound,
-            entry: Pair<Pair<Int, Int>, Cell>,
-            // Set: use the hypothesis that a path never loop
-            currentPath: Set<Step>,
-            results: List<Set<Step>>
-    ): List<Set<Step>> {
-        val currentLevel = currentPath.last().level
-        val newEntries = nextCells(entry.first.first, entry.first.second)
-                // Remove all visited positions
-                .filter { position ->
-                    if (currentLevel < 0) {
-                        !currentPath.map { it.x to it.y }.contains(position)
-                    } else {
-                        // Prevent looping in deeper through a path already used
-                        val loopNested = this[position] is Cell.Entry && isToTheInside(position, bound) && currentPath.any { it.x == position.first && it.y == position.second && it.level <= currentLevel }
-                        !loopNested && !currentPath.contains(Step(position.first, position.second, currentLevel))
-                    }
-                }
-                .fold(emptyList<Set<Step>>()) { acc, position ->
-                    val step = Step(position.first, position.second, currentLevel)
-                    when (val cell = this[position]) {
-                        Cell.Path -> findAllPaths(bound, position to cell, currentPath.plus(step), acc)
-                        ENDING_CELL -> if (currentLevel <= 0) acc.plusElement(currentPath) else acc
-                        STARTING_CELL -> acc
-                        is Cell.Entry -> {
-                            val newPosition = entries.first { it.key != position && it.value == cell }.toPair()
-                            val nextLevel = when {
-                                currentLevel < 0 -> currentLevel
-                                else -> {
-                                    val isToTheInside = isToTheInside(position, bound)
-                                    if (currentLevel == 0 && !isToTheInside) return@fold acc
-                                    if (isToTheInside) currentLevel + 1 else currentLevel - 1
-                                }
-                            }
-                            val nextStep = Step(newPosition.first.first, newPosition.first.second, nextLevel)
-                            val visitedPaths = currentPath.plus(step).plus(nextStep)
-                            findAllPaths(bound, newPosition, visitedPaths, acc)
-                        }
-                        null -> acc
-                    }
-                }
-        return newEntries.plus(results)
-    }
-
-    private fun isToTheInside(position: Pair<Int, Int>, bound: BoardBound) =
-            (position.first in bound.left..bound.right
-                    && position.second in bound.top..bound.bottom)
-
-
-    private fun findEntries(input: Map<Pair<Int, Int>, Char>, position: Pair<Int, Int>,
-                            entries: List<Pair<Pair<Int, Int>, Char>>): Pair<Pair<Int, Int>, Cell>? {
-        if (entries.size == 2) return entries.first().first to Cell.Entry(entries.sortedWith(Comparator { a, b ->
-            if (a.first.first == b.first.first) {
-                a.first.second.compareTo(b.first.second)
-            } else {
-                a.first.first.compareTo(b.first.first)
-            }
-        }).joinToString("") { it.second.toString() })
-        val x = position.first
-        val y = position.second
-        val entry = nextCells(x, y)
-                // Uppercase ascii character
-                .firstOrNull { entries.none { e -> e.first == it } && input[it]?.toInt() in (65..90) } ?: return null
-        val value = input[entry]!!
-        return findEntries(input, entry, entries.plus(entry to value))
-
-
-    }
+    data class Step(val node: Cell.Road, val level: Int)
 
     private fun nextCells(x: Int, y: Int): List<Pair<Int, Int>> {
         return listOf(
@@ -119,14 +109,16 @@ class Day20 : Day {
 
     override suspend fun execute2() {
         val (board, correctPaths) = findPaths(true)
-        println(correctPaths.map { it.filter { board[it.x to it.y] is Cell.Path }.count() - 1 })
+        println(correctPaths.map { it.pathLength(board) })
     }
-
-    private val STARTING_CELL = Cell.Entry("AA")
-    private val ENDING_CELL = Cell.Entry("ZZ")
 
     sealed class Cell {
         object Path : Cell()
-        data class Entry(val value: String) : Cell()
+        sealed class Road : Cell() {
+            abstract val value: String
+
+            data class In(override val value: String) : Road()
+            data class Out(override val value: String) : Road()
+        }
     }
 }
