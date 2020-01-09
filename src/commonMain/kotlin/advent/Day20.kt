@@ -25,18 +25,23 @@ class Day20 : Day {
     private fun BoardNodes.findAllPaths(steps: Set<Step>, result: List<Set<Step>>, withLevels: Boolean): List<Set<Step>> {
         val previousStep = steps.last()
         val level = previousStep.level
+        // Dirty trick to limit memory and remains out of StackOverFlow
+        // (would not work if the answer needs to recurse more than 25 times...)
+        if (level > 25) return result
         return this[previousStep.node]!!.keys.fold(result) { acc, node ->
             val step = Step(node, level)
             val updatedSteps = steps.plus(step)
             when {
-                // steps.contains(step) -> acc
-                steps.any { it.node == node && level > it.level } -> acc
+                level < 0 && steps.contains(step) -> acc
                 node.value == "ZZ" -> if (level <= 0) acc.plusElement(updatedSteps) else acc
                 node.value == "AA" -> acc
                 else -> {
                     val nextStep = when (node) {
                         is Cell.Road.In -> Step(Cell.Road.Out(node.value), if (level < 0) level else level + 1)
-                        is Cell.Road.Out -> Step(Cell.Road.In(node.value), if (level < 0) level else level - 1)
+                        is Cell.Road.Out -> {
+                            if (level == 0) return@fold acc
+                            Step(Cell.Road.In(node.value), if (level < 0) level else level - 1)
+                        }
                     }
                     findAllPaths(updatedSteps.plus(nextStep), acc, withLevels)
                 }
