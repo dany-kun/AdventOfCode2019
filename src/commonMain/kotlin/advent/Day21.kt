@@ -46,23 +46,22 @@ class Day21 : Day {
     }
 
     override suspend fun execute2() {
-        // Rules:
-        // If hole in 1: Jump
-        // If no holes in 1,2,3,4, 5, 6, 7, 8, 9: Do not jump
-        // If holes in 4: Jump
+        // Logic to simplify (beginning same as ex 1)
+        // If hole in A -> Jump
+        // Elif no hole in B & C -> dont jump
+        // Elif hole in D -> dont jump
+        // Elif no hole in E & H -> dont jump
+        // -> !A || ( (!B || !C) && D && (E || H) )
         val cmd = """
-                OR B T
-                AND C T
+                NOT B T
+                NOT C J
                 OR T J
-                NOT D T
-                OR J T
-                NOT E J
-                NOT J J
-                OR H J
-                NOT J J
-                OR T J
+                AND D J
+                NOT E T
                 NOT T T
-                NOT A J
+                OR H T
+                AND T J
+                NOT A T
                 OR T J
                 RUN
                 
