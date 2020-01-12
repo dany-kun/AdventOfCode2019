@@ -7,13 +7,11 @@ class Day21 : Day {
         // If no holes in 1,2,3,4: Do not jump
         // If holes in 4: Jump
         val cmd = """
-                OR B T
-                AND C T
+                NOT B T
+                NOT C J
                 OR T J
-                NOT D T
-                OR J T
-                NOT T T
-                NOT A J
+                AND D J
+                NOT A T
                 OR T J
                 WALK
                 
